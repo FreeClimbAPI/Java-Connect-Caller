@@ -1,45 +1,45 @@
 /* 
- * NOTE: Testing this tutorial requires 2 phone numbers, referenced as AGENT_PHONE and CALLER_PHONE
+ * NOTE: Testing this tutorial requires 2 phone numbers, referenced as agentPhoneNumber and CALLER_PHONE
  *
- * 1. SET AGENT_PHONE WITH A PHONE NUMBER CAPABLE OF ACCEPTING PHONE CALLS OR CREATE lookupAgentPhoneNumber() FUNCTION
- *    AGENT_PHONE must have the format "+1XXXXXXXXXX"
+ * 1. SET agentPhoneNumber WITH A PHONE NUMBER (IN E.164 FORMAT) CAPABLE OF ACCEPTING PHONE CALLS OR CREATE lookupAgentPhoneNumber() 
+ *    FUNCTION agentPhoneNumber
  * 2. RUN PROJECT WITH COMMAND: 
  *    `gradle build && java -Dserver.port=0080 -jar build/libs/gs-spring-boot-0.1.0.jar`
- * 3. USING CALLER_PHONE, CALL PERSEPHONY NUMBER ASSOCIATED WITH THE ACCOUNT (CONFIGURED IN PERSEPHONY DASHBOARD)
- * 4. EXPECT AGENT_PHONE TO RECEIVE CALL FROM PERSEPHONY NUMBER ASSOCIATED WITH THE ACCOUNT: 
- * 5. EXPECT AGENT_PHONE and CALLER_PHONE SHOULD BE IN A CONFERENCE CALL
+ * 3. USING CALLER_PHONE, CALL FreeClimb NUMBER ASSOCIATED WITH THE ACCOUNT (CONFIGURED IN FreeClimb DASHBOARD)
+ * 4. EXPECT agentPhoneNumber TO RECEIVE CALL FROM FreeClimb NUMBER ASSOCIATED WITH THE ACCOUNT: 
+ * 5. EXPECT agentPhoneNumber and CALLER_PHONE SHOULD BE IN A CONFERENCE CALL
 */
 
 package main.java.connect_caller_to_party;
 
 import org.springframework.web.bind.annotation.RestController;
-import com.vailsys.persephony.percl.*;
+import com.vailsys.freeclimb.percl.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.vailsys.persephony.api.PersyException;
-import com.vailsys.persephony.webhooks.conference.ConferenceCreateActionCallback;
+import com.vailsys.freeclimb.api.FreeClimbException;
+import com.vailsys.freeclimb.webhooks.conference.ConferenceCreateActionCallback;
 
-import com.vailsys.persephony.webhooks.percl.OutDialActionCallback;
+import com.vailsys.freeclimb.webhooks.percl.OutDialActionCallback;
 
-import com.vailsys.persephony.webhooks.StatusCallback;
-import com.vailsys.persephony.api.call.CallStatus;
+import com.vailsys.freeclimb.webhooks.StatusCallback;
+import com.vailsys.freeclimb.api.call.CallStatus;
 
-import com.vailsys.persephony.webhooks.conference.LeaveConferenceUrlCallback;
+import com.vailsys.freeclimb.webhooks.conference.LeaveConferenceUrlCallback;
 
-import com.vailsys.persephony.api.PersyClient;
-import com.vailsys.persephony.api.conference.ConferenceUpdateOptions;
-import com.vailsys.persephony.api.conference.ConferenceStatus;
+import com.vailsys.freeclimb.api.FreeClimbClient;
+import com.vailsys.freeclimb.api.conference.ConferenceUpdateOptions;
+import com.vailsys.freeclimb.api.conference.ConferenceStatus;
 
 @RestController
 public class ConnectCallerToPartyController {
   private String baseUrl = System.getenv("HOST");
 
-  // To properly communicate with Persephony's API, set your Persephony app's
+  // To properly communicate with FreeClimb's API, set your FreeClimb app's
   // VoiceURL endpoint to '{yourApplicationURL}/InboundCall' for this example
-  // Your Persephony app can be configured in the Persephony Dashboard
+  // Your FreeClimb app can be configured in the FreeClimb Dashboard
   @RequestMapping(value = {
       "/InboundCall" }, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
   public ResponseEntity<?> inboundCall() {
@@ -66,14 +66,14 @@ public class ConnectCallerToPartyController {
       script.add(new Say("Please wait while we attempt to connect you to an agent."));
 
       // Make OutDial request once conference has been created
-      String agentPhoneNumber = ""; // AGENT_PHONE; // lookupAgentPhoneNumber(); // implementation of
-                                    // lookupAgentPhoneNumber() is left up to the developer
+      String agentPhoneNumber = ""; // lookupAgentPhoneNumber(); // implementation of
+      // lookupAgentPhoneNumber() is left up to the developer
       OutDial outDial = new OutDial(agentPhoneNumber, conferenceCreateActionCallback.getFrom(),
           baseUrl + "/OutboundCallMade" + "/" + conferenceId, baseUrl + "/OutboundCallConnected" + "/" + conferenceId);
       outDial.setIfMachine(OutDialIfMachine.HANGUP);
       script.add(outDial);
 
-    } catch (PersyException pe) {
+    } catch (FreeClimbException pe) {
       System.out.print(pe);
     }
 
@@ -97,7 +97,7 @@ public class ConnectCallerToPartyController {
       addToConference.setLeaveConferenceUrl(baseUrl + "/LeftConference");
       script.add(addToConference);
 
-    } catch (PersyException pe) {
+    } catch (FreeClimbException pe) {
       System.out.print(pe);
     }
 
@@ -122,7 +122,7 @@ public class ConnectCallerToPartyController {
       }
 
       script.add(new AddToConference(conferenceId, statusCallback.getCallId()));
-    } catch (PersyException pe) {
+    } catch (FreeClimbException pe) {
       System.out.print(pe);
     }
 
@@ -140,17 +140,17 @@ public class ConnectCallerToPartyController {
       // command since PerCL is ignored if the caller hangs up.
       terminateConference(leaveConferenceUrlCallback.getConferenceId());
 
-    } catch (PersyException pe) {
+    } catch (FreeClimbException pe) {
       System.out.print(pe);
     }
 
     return new ResponseEntity<>("", HttpStatus.OK);
   }
 
-  private static void terminateConference(String conferenceId) throws PersyException {
+  private static void terminateConference(String conferenceId) throws FreeClimbException {
     String accountId = System.getenv("ACCOUNT_ID");
     String authToken = System.getenv("AUTH_TOKEN");
-    PersyClient client = new PersyClient(accountId, authToken);
+    FreeClimbClient client = new FreeClimbClient(accountId, authToken);
 
     // Create the ConferenceUpdateOptions and set the status to terminated
     ConferenceUpdateOptions conferenceUpdateOptions = new ConferenceUpdateOptions();
