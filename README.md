@@ -1,4 +1,4 @@
-# Java - Connect a Caller to Another Party Tutorial
+# Java - Connect Caller To Another Party
 
 This project serves as a guide to help you build an application with FreeClimb. View this tutorial on [FreeClimb.com](https://docs.freeclimb.com/docs/connect-a-caller-to-another-party-1#section-java). Specifically, the project will:
 
